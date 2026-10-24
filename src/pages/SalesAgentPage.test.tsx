@@ -16,7 +16,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 const initiateResearch = vi.fn();
 const registerJob = vi.fn();
 
-vi.mock('./api', () => ({
+vi.mock('../api/client', () => ({
   initiateResearch: (...args: unknown[]) => initiateResearch(...args),
   getResearchStatus: vi.fn(async () => ({ job_id: 'j1', status: 'PROCESSING' })),
   getResearchResult: vi.fn(async () => ({ job_id: 'j1', status: 'PROCESSING' })),
@@ -30,7 +30,7 @@ vi.mock('@aicoe/aihub-platform/auth', async (importOriginal) => ({
   useEntitlements: () => ({ translation: true, sales: true, naas: true }),
 }));
 
-vi.mock('./useSalesJobs', () => ({
+vi.mock('../features/jobs/useSalesJobs', () => ({
   useSalesJobs: () => ({
     jobs: {},
     jobOrder: [],

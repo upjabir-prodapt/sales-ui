@@ -1,12 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { getResearchStatus, cancelResearch } from './api';
-import type { SalesJobStatus } from './types';
+import { getResearchStatus, cancelResearch } from '../../api/client';
+import type { SalesJobStatus } from '../../api/types';
 
 /**
  * In-session registry of Sales Agent research runs started in this tab.
  *
  * This is NOT the history store — `GET /research/jobs` is (see
- * api/salesAgentApi.listResearchJobs). Its only job is to give a run started
+ * `listResearchJobs` in src/api/client.ts). Its only job is to give a run started
  * just now immediate presence in the Hub's in-flight count and the Recent runs
  * panel, before the next server refresh picks it up, and to keep polling it
  * while it's active.
@@ -16,7 +16,7 @@ import type { SalesJobStatus } from './types';
  * already dropped and contradict the rolling-week view.
  */
 
-export type { SalesJobStatus } from './types';
+export type { SalesJobStatus } from '../../api/types';
 
 export interface SalesJobRecord {
   job_id: string;

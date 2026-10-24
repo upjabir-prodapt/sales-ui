@@ -1,10 +1,10 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Search, ShieldCheck, Zap, Globe, PieChart, Hash } from 'lucide-react';
-import { initiateResearch } from './api';
+import { initiateResearch } from '../api/client';
 import { useEntitlements } from '@aicoe/aihub-platform/auth';
-import { useSalesJobs } from './useSalesJobs';
+import { useSalesJobs } from '../features/jobs/useSalesJobs';
 import { useServiceJobs } from '@aicoe/aihub-platform/jobs';
-import { salesJobSource } from './jobSource';
+import { salesJobSource } from '../features/jobs/jobSource';
 import { RecentRuns } from '@aicoe/aihub-platform/tracker';
 import {
   RunJobModal,
@@ -13,8 +13,8 @@ import {
   type ToastState,
 } from '@aicoe/aihub-platform/ui';
 import { ServiceLanding } from '@aicoe/aihub-platform/hub';
-import FeedbackModal from './FeedbackModal';
-import './sales-agent.css';
+import FeedbackModal from '../components/FeedbackModal';
+import '../styles/sales-agent.css';
 
 /**
  * This page launches research runs; it does not display their results.

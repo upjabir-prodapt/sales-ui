@@ -4,13 +4,46 @@ The front end of the Sales Agent use case on the Colt AI Hub: a React SPA served
 as static files by nginx from its own Cloud Run service, `sales-ui`, in
 `gclt-aicoe-dev-st` (`europe-west3`).
 
-It was split out of `code-scanning-toolset/shared-aihub-ui`,
-where the same pages ran inside the hub. The use-case code under
-`src/usecases/sales/` and `src/usecases/base.ts` is copied unchanged from the
-hub's `frontend/src/usecases/`; the shell, sign-in, API client, job tracker and
-UI primitives come from the shared package `@aicoe/aihub-platform`.
+It was split out of `code-scanning-toolset/shared-aihub-ui`, where the same
+pages ran inside the hub. This repository is now the source of truth for the
+Sales Agent UI; the shell, sign-in, API client, job tracker and UI primitives
+come from the shared package `@aicoe/aihub-platform`.
 
 GitLab: `code-scanning-toolset/shared-sales-ui`. Branches `sandbox` → `dev` → `prod`.
+
+## Source layout
+
+```
+src/
+  main.tsx                    bootstrap: platform CSS + i18n, quota services, render <App />
+  app/
+    App.tsx                   providers: router, platform registry port, platform, job registry
+    routes.tsx                the routes, the role gate, /denied and out-of-app handling
+    config.ts                 slug, base path, label, roles, sidebar, platform descriptor
+    leaveApp.ts               full-page navigation to another app on the host
+  pages/
+    SalesAgentPage.tsx        /sales
+    TrackerPage.tsx           /sales/tracker
+  components/
+    FeedbackModal.tsx         feedback on a completed research run
+  features/jobs/
+    jobSource.ts              the platform JobSource for Sales runs (tracker, Recent runs)
+    SalesJobsContext.tsx      SalesJobsProvider, mounted above the routes
+    salesJobsContextValue.ts  the context object and its type
+    useSalesJobs.ts           reads the context
+    useSalesJobsState.ts      the in-session job registry and its polling
+  api/
+    client.ts                 calls to /api/sales/v1/*
+    types.ts                  request/response types
+  styles/
+    sales-agent.css
+  test/setup.ts               Vitest setup
+```
+
+Tests sit next to the code they test (`*.test.ts(x)`). `src/app/config.ts` is
+the one place the slug, roles and sidebar are declared; the slug is repeated
+only in `vite.config.ts` (`base`) and the Dockerfile (`ARG SLUG`), which must
+match it.
 
 ## How requests reach this app
 
@@ -36,15 +69,14 @@ browser ──► https://aihub.aicoedev-int.colt.net/...
   breadcrumb root and "Feedback & support" are full-page links: the hub is a
   different service behind the same load balancer. A client-side navigation to
   a path outside `/sales` (e.g. a "back" button calling `navigate('/')`) is
-  turned into a full-page load too (`src/AppRoutes.tsx`).
+  turned into a full-page load too (`src/app/routes.tsx`).
 
 ### No router basename
 
-`src/AppRoutes.tsx` mounts the manifest exactly as the hub's `router.tsx` does,
-with **no** `basename`. The manifest's routes (`sales/...`), its sidebar
-entries and the vertical's own links are written as paths on the shared host,
-because that is what they are in the hub; a basename of `/sales` would prefix
-each of them a second time. Since only `/sales/*` ever reaches this app, host
+`src/app/routes.tsx` mounts the routes with **no** `basename`. The routes
+(`sales/...`), the sidebar entries and the pages' own links are written as
+paths on the shared host, because that is what they are; a basename of
+`/sales` would prefix each of them a second time. Since only `/sales/*` ever reaches this app, host
 paths and router paths are the same thing.
 
 The one platform path outside the app is `/denied`: `RequireRole` redirects a

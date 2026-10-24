@@ -15,8 +15,8 @@
 # ── Stage 1: build the SPA ───────────────────────────────────────────────────
 FROM node:24.20.0-alpine3.24 AS build
 
-# The URL path segment this app owns. Must match `slug` in the manifest and the
-# load balancer's path rule.
+# The URL path segment this app owns. Must match `SLUG` in src/app/config.ts and
+# the load balancer's path rule.
 ARG SLUG=sales
 # Extra CSP origins, exactly as aihub-bff's CSP_CONNECT_SRC_EXTRA /
 # object_store_origin. Part of the image, not the environment: they are a

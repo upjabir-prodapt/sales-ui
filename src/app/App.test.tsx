@@ -68,7 +68,7 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(requestedPaths()).toContain('/auth/session');
 
-    // The vertical's own sidebar, with the way back to the hub as a full-page link.
+    // The app's own sidebar, with the way back to the hub as a full-page link.
     const nav = screen.getByRole('navigation');
     expect(within(nav).getByRole('link', { name: 'AI Hub' })).toHaveAttribute('href', '/');
     expect(window.location.pathname).toBe('/sales');

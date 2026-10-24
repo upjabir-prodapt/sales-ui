@@ -1,5 +1,5 @@
 import React from 'react';
-import { submitResearchFeedback } from './api';
+import { submitResearchFeedback } from '../api/client';
 import { FeedbackDialog, type FeedbackExample } from '@aicoe/aihub-platform/ui';
 
 interface FeedbackModalProps {

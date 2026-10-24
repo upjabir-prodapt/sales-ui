@@ -8,12 +8,12 @@ import {
   shortRunLabel,
   toFinitePercent,
 } from '@aicoe/aihub-platform/jobs';
-import type { ResearchJobListItem } from './api';
-import { downloadResearchFile, getResearchResult, listResearchJobs } from './api';
-import type { ResearchResultResponse } from './types';
+import type { ResearchJobListItem } from '../../api/client';
+import { downloadResearchFile, getResearchResult, listResearchJobs } from '../../api/client';
+import type { ResearchResultResponse } from '../../api/types';
 import type { SalesJobRecord } from './useSalesJobsState';
 import { useSalesJobs } from './useSalesJobs';
-import FeedbackModal from './FeedbackModal';
+import FeedbackModal from '../../components/FeedbackModal';
 
 const SALES_STATUS_MAP: Record<string, UnifiedJobStatus> = {
   pending: 'queued',
