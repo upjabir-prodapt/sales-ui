@@ -4,8 +4,6 @@ import type {
   ResearchModelCard,
   ResearchResultResponse,
   ResearchJobListItem,
-  ResearchFeedbackRequest,
-  ResearchFeedbackResponse,
 } from './types';
 import { apiDownload, apiJson, apiPostJson } from '@aicoe/aihub-platform/api';
 
@@ -15,8 +13,6 @@ export type {
   ResearchModelCard,
   ResearchResultResponse,
   ResearchJobListItem,
-  ResearchFeedbackRequest,
-  ResearchFeedbackResponse,
 };
 
 /**
@@ -86,26 +82,4 @@ export async function downloadResearchFile(job_id: string): Promise<void> {
   // (Research_Report_<Company>.pdf), which apiDownload prefers. It streams
   // application/pdf, so the fallback must not claim .md.
   await apiDownload(`${API_BASE}/research/download/${job_id}`, `research-${job_id}.pdf`);
-}
-
-/**
- * `POST /research/{job_id}/feedback` — rate a finished run, optionally with a
- * comment.
- *
- * `feedback` is omitted from the body rather than sent empty: the service
- * rejects an empty string, and `extra="forbid"` means we cannot send `null`
- * either.
- */
-export async function submitResearchFeedback(
-  job_id: string,
-  rating: number,
-  feedback?: string,
-): Promise<ResearchFeedbackResponse> {
-  const comment = feedback?.trim();
-  const body: ResearchFeedbackRequest = comment ? { rating, feedback: comment } : { rating };
-  return await apiPostJson<ResearchFeedbackResponse>(
-    `${API_BASE}/research/${job_id}/feedback`,
-    body,
-    { errorMessage: 'Failed to submit feedback' },
-  );
 }

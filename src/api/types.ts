@@ -73,24 +73,3 @@ export interface ResearchJobListItem {
   error_message?: string | null;
   progress?: number | null;
 }
-
-/**
- * `POST /research/{job_id}/feedback` — a 1-5 rating plus an optional comment,
- * matching the shape of a Translation review.
- *
- * The schema is `extra="forbid"` upstream, so only these two fields may be
- * sent. Omit `feedback` entirely to leave no comment: an empty string is
- * rejected as a malformed comment rather than treated as an absent one.
- */
-export interface ResearchFeedbackRequest {
-  /** 1-5 inclusive; required. */
-  rating: number;
-  /** Optional. When present, 1-1000 characters. */
-  feedback?: string;
-}
-
-export interface ResearchFeedbackResponse {
-  job_id: string;
-  status: string;
-  message: string;
-}
