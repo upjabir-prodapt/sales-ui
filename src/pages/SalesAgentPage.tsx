@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Search, ShieldCheck, Zap, Globe, PieChart, Hash } from 'lucide-react';
 import { initiateResearch } from '../api/client';
 import { useEntitlements } from '@aicoe/aihub-platform/auth';
@@ -6,14 +6,8 @@ import { useSalesJobs } from '../features/jobs/useSalesJobs';
 import { useServiceJobs } from '@aicoe/aihub-platform/jobs';
 import { salesJobSource } from '../features/jobs/jobSource';
 import { RecentRuns } from '@aicoe/aihub-platform/tracker';
-import {
-  RunJobModal,
-  SubmitErrorModal,
-  FeedbackToast,
-  type ToastState,
-} from '@aicoe/aihub-platform/ui';
+import { RunJobModal, SubmitErrorModal, openRunFeedback } from '@aicoe/aihub-platform/ui';
 import { ServiceLanding } from '@aicoe/aihub-platform/hub';
-import FeedbackModal from '../components/FeedbackModal';
 import '../styles/sales-agent.css';
 
 /**
@@ -74,17 +68,6 @@ const SalesAgentPage: React.FC<SalesAgentPageProps> = ({ onOpenTracker, onBack }
    * concurrent runs, so the only limit was this button.
    */
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  /** Which completed run's feedback dialog is open. */
-  const [feedbackJobId, setFeedbackJobId] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastState | null>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = useCallback((ok: boolean, message: string) => {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    setToast({ ok, message });
-    toastTimer.current = setTimeout(() => setToast(null), 4500);
-  }, []);
 
   // Invoked by RunJobModal's form submit, which already calls preventDefault.
   const startResearch = async () => {
@@ -203,19 +186,9 @@ const SalesAgentPage: React.FC<SalesAgentPageProps> = ({ onOpenTracker, onBack }
         // Expanding a completed row loads the run's model/tokens/time/cost from
         // GET /research/result — the figures the removed report panel showed.
         onLoadDetail={serviceJobs.loadDetail}
-        onFeedback={(job) => setFeedbackJobId(job.id)}
+        // Feedback on a run is an AI Hub ticket, pre-filled with the run.
+        onFeedback={openRunFeedback}
       />
-
-      {feedbackJobId && (
-        <FeedbackModal
-          isOpen
-          jobId={feedbackJobId}
-          onClose={() => setFeedbackJobId(null)}
-          onSubmitted={showToast}
-        />
-      )}
-
-      <FeedbackToast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   );
 };

@@ -11,9 +11,9 @@ import {
 import type { ResearchJobListItem } from '../../api/client';
 import { downloadResearchFile, getResearchResult, listResearchJobs } from '../../api/client';
 import type { ResearchResultResponse } from '../../api/types';
+import { openRunFeedback } from '@aicoe/aihub-platform/ui';
 import type { SalesJobRecord } from './useSalesJobsState';
 import { useSalesJobs } from './useSalesJobs';
-import FeedbackModal from '../../components/FeedbackModal';
 
 const SALES_STATUS_MAP: Record<string, UnifiedJobStatus> = {
   pending: 'queued',
@@ -49,7 +49,7 @@ export function normalizeSalesHistoryItem(item: ResearchJobListItem): UnifiedJob
     errorMessage: item.error_message ?? null,
     canCancel: status === 'queued' || status === 'running',
     canDownload: status === 'completed',
-    // Research runs take free-text feedback (no rating) — see FeedbackModal.
+    // Feedback on a finished run goes to the AI Hub's ticket form (openRunFeedback).
     canReview: status === 'completed',
     startedBy: null,
   };
@@ -72,7 +72,7 @@ export function normalizeSalesJob(item: SalesJobRecord): UnifiedJob {
     errorMessage: item.errorMessage,
     canCancel: status === 'queued' || status === 'running',
     canDownload: status === 'completed',
-    // Research runs take free-text feedback (no rating) — see FeedbackModal.
+    // Feedback on a finished run goes to the AI Hub's ticket form (openRunFeedback).
     canReview: status === 'completed',
     startedBy: null,
   };
@@ -128,7 +128,7 @@ export const salesJobSource: JobSource = {
       [ctx],
     );
   },
-  ReviewModal: FeedbackModal,
+  openFeedback: openRunFeedback,
   label: 'Sales Agent',
   fetchDetail: async (job) => extractSalesDetail(await getResearchResult(job.id)),
 };

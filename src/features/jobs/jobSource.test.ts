@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { shortRunLabel } from '@aicoe/aihub-platform/jobs';
+import { openRunFeedback } from '@aicoe/aihub-platform/ui';
 import type { ResearchJobListItem } from '../../api/client';
-import { extractSalesDetail, normalizeSalesHistoryItem, normalizeSalesJob } from './jobSource';
+import {
+  extractSalesDetail,
+  normalizeSalesHistoryItem,
+  normalizeSalesJob,
+  salesJobSource,
+} from './jobSource';
 import type { ResearchResultResponse } from '../../api/types';
 
 /**
@@ -138,5 +144,12 @@ describe('normalizeSalesJob', () => {
       canCancel: true,
       canDownload: false,
     });
+  });
+});
+
+describe('feedback', () => {
+  it('sends feedback on a run to the AI Hub ticket form, not a dialog of its own', () => {
+    expect(salesJobSource.openFeedback).toBe(openRunFeedback);
+    expect(salesJobSource.ReviewModal).toBeUndefined();
   });
 });
