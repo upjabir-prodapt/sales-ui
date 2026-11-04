@@ -175,6 +175,8 @@ export const salesJobSource: JobSource = {
   },
   openFeedback: openRunFeedback,
   label: 'Sales Agent',
+  // Backend keeps runs and outputs for JOB_RETENTION_DAYS (183); shown in the Job Tracker.
+  historyWindow: '6 months',
   fetchDetail: async (job) =>
     extractSalesDetail(await markIfExpired(job, () => getResearchResult(job.id))),
 };
