@@ -11,9 +11,12 @@ import type { SalesJobStatus } from '../../api/types';
  * panel, before the next server refresh picks it up, and to keep polling it
  * while it's active.
  *
- * Deliberately not persisted: the backend purges runs and their output files
- * after 7 days, so a localStorage copy would resurrect rows the server has
- * already dropped and contradict the rolling-week view.
+ * Deliberately not persisted (no localStorage): the backend lists runs, and
+ * keeps their output files, for its retention period (6 months from creation,
+ * each run's `expires_at`). Only the server decides what is still listed, so a
+ * stored copy could only ever resurrect runs it has dropped. Nothing here
+ * filters by age either, so a run is never hidden while the server still
+ * returns it.
  */
 
 export type { SalesJobStatus } from '../../api/types';
@@ -26,6 +29,8 @@ export interface SalesJobRecord {
   createdAt: string;
   completedAt: string | null;
   errorMessage: string | null;
+  /** From the status poll: when the run's report stops being available. */
+  expiresAt?: string | null;
 }
 
 const REFRESH_INTERVAL_MS = 60 * 1000;
@@ -86,6 +91,7 @@ export const useSalesJobsState = () => {
             status,
             completedAt: terminal ? existing.completedAt ?? new Date().toISOString() : existing.completedAt,
             errorMessage: typeof res.error_message === 'string' ? res.error_message : existing.errorMessage,
+            expiresAt: typeof res.expires_at === 'string' ? res.expires_at : existing.expiresAt,
           },
         };
       });
