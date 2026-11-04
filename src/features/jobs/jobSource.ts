@@ -9,11 +9,17 @@ import {
   toFinitePercent,
 } from '@aicoe/aihub-platform/jobs';
 import type { ResearchJobListItem } from '../../api/client';
-import { downloadResearchFile, getResearchResult, listResearchJobs } from '../../api/client';
+import {
+  downloadResearchFile,
+  getResearchResult,
+  listResearchJobs,
+  RetentionExpiredError,
+} from '../../api/client';
 import type { ResearchResultResponse } from '../../api/types';
 import { openRunFeedback } from '@aicoe/aihub-platform/ui';
 import type { SalesJobRecord } from './useSalesJobsState';
 import { useSalesJobs } from './useSalesJobs';
+import { salesHistoryPages, useSalesHistoryPages } from './historyPages';
 
 const SALES_STATUS_MAP: Record<string, UnifiedJobStatus> = {
   pending: 'queued',
@@ -29,6 +35,24 @@ function mapSalesStatus(raw: string | undefined): UnifiedJobStatus {
   return SALES_STATUS_MAP[raw?.toLowerCase?.() ?? ''] ?? 'queued';
 }
 
+/** "Available until 3 May 2027" in the viewer's locale; null without a valid date. */
+export function availableUntilLabel(expiresAt: string | null | undefined): string | null {
+  if (!expiresAt) return null;
+  const date = new Date(expiresAt);
+  if (Number.isNaN(date.getTime())) return null;
+  return `Available until ${date.toLocaleDateString(undefined, { dateStyle: 'medium' })}`;
+}
+
+function salesSubtitle(accountId: string | null | undefined, expiresAt: string | null | undefined): string {
+  return [
+    'Sales research',
+    accountId ? `Account ${accountId}` : null,
+    availableUntilLabel(expiresAt),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
 /** Normalizes an item from `GET /research/jobs` (server-side history). */
 export function normalizeSalesHistoryItem(item: ResearchJobListItem): UnifiedJob {
   const status = mapSalesStatus(item.status);
@@ -39,9 +63,7 @@ export function normalizeSalesHistoryItem(item: ResearchJobListItem): UnifiedJob
     service: 'sales',
     serviceLabel: 'Sales research',
     title: company || shortRunLabel(item.job_id),
-    subtitle: item.account_id
-      ? `Sales research · Account ${item.account_id}`
-      : 'Sales research',
+    subtitle: salesSubtitle(item.account_id, item.expires_at),
     status,
     progress: toFinitePercent(item.progress),
     createdAt: item.created_at ?? null,
@@ -64,7 +86,7 @@ export function normalizeSalesJob(item: SalesJobRecord): UnifiedJob {
     service: 'sales',
     serviceLabel: 'Sales research',
     title: item.company_name || item.job_id,
-    subtitle: item.account_id ? `Sales research · Account ${item.account_id}` : 'Sales research',
+    subtitle: salesSubtitle(item.account_id, item.expiresAt),
     status,
     progress: null,
     createdAt: item.createdAt,
@@ -103,18 +125,39 @@ export function extractSalesDetail(result: ResearchResultResponse): UnifiedJobDe
 }
 
 
+/** Runs `call`; on a 410 marks the row expired with the server's message, then re-throws. */
+async function markIfExpired<T>(job: UnifiedJob, call: () => Promise<T>): Promise<T> {
+  try {
+    return await call();
+  } catch (err) {
+    if (err instanceof RetentionExpiredError) salesHistoryPages.markExpired(job, err.message);
+    throw err;
+  }
+}
+
 export const salesJobSource: JobSource = {
   slug: 'sales',
-  listHistory: async () => (await listResearchJobs()).map(normalizeSalesHistoryItem),
+  // The first page only; "Load more" pages are in historyPages.ts.
+  listHistory: async () => {
+    const page = await listResearchJobs();
+    salesHistoryPages.setFirstPage(page);
+    return page.jobs.map(normalizeSalesHistoryItem);
+  },
+  // In-session runs, plus the older pages and 410 overrides, which the
+  // platform merges over the history by job key (later entries win).
   useActive: () => {
     const ctx = useSalesJobs();
+    const pages = useSalesHistoryPages();
     return useMemo(
-      () =>
-        ctx.jobOrder
+      () => [
+        ...pages.older.map(normalizeSalesHistoryItem),
+        ...ctx.jobOrder
           .map((id) => ctx.jobs[id])
           .filter((j): j is NonNullable<typeof j> => !!j)
           .map(normalizeSalesJob),
-      [ctx.jobOrder, ctx.jobs],
+        ...Object.values(pages.expired),
+      ],
+      [ctx.jobOrder, ctx.jobs, pages.older, pages.expired],
     );
   },
   useActions: (): JobSourceActions => {
@@ -122,7 +165,9 @@ export const salesJobSource: JobSource = {
     return useMemo(
       () => ({
         cancel: (job: UnifiedJob) => ctx.cancelJob(job.id),
-        download: (job: UnifiedJob) => downloadResearchFile(job.id),
+        // A 410 rejects with the server's message, which the platform shows
+        // as the action error; the row is also marked expired.
+        download: (job: UnifiedJob) => markIfExpired(job, () => downloadResearchFile(job.id)),
         refresh: () => ctx.refreshAll(),
       }),
       [ctx],
@@ -130,5 +175,8 @@ export const salesJobSource: JobSource = {
   },
   openFeedback: openRunFeedback,
   label: 'Sales Agent',
-  fetchDetail: async (job) => extractSalesDetail(await getResearchResult(job.id)),
+  // Backend keeps runs and outputs for JOB_RETENTION_DAYS (183); shown in the Job Tracker.
+  historyWindow: '6 months',
+  fetchDetail: async (job) =>
+    extractSalesDetail(await markIfExpired(job, () => getResearchResult(job.id))),
 };

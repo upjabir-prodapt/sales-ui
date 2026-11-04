@@ -35,6 +35,8 @@ export type SalesJobStatus =
 export interface ResearchStatusResponse {
   job_id: string;
   status: SalesJobStatus;
+  /** When the run's report stops being available (ISO 8601 UTC). */
+  expires_at?: string | null;
   [key: string]: unknown;
 }
 
@@ -56,6 +58,8 @@ export interface ResearchResultResponse {
   /** Legacy alias — no longer emitted by the backend; kept for compatibility. */
   report_markdown?: string;
   model_card?: ResearchModelCard | null;
+  /** When the run's report stops being available (ISO 8601 UTC). */
+  expires_at?: string | null;
   [key: string]: unknown;
 }
 
@@ -70,6 +74,18 @@ export interface ResearchJobListItem {
   account_id?: string | null;
   created_at?: string | null;
   completed_at?: string | null;
+  /**
+   * created_at + the service's retention period (ISO 8601 UTC). After it the
+   * run is no longer listed and its report answers 410.
+   */
+  expires_at?: string | null;
   error_message?: string | null;
   progress?: number | null;
+}
+
+/** One page of `GET /research/jobs`, newest first. */
+export interface ResearchJobListPage {
+  jobs: ResearchJobListItem[];
+  /** Pass back as `cursor` for the next (older) page; absent on the last page. */
+  next_cursor?: string | null;
 }

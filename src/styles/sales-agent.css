@@ -118,6 +118,21 @@
   to   { transform: rotate(360deg); }
 }
 
+/* ── Job Tracker "Load more" (older pages of GET /research/jobs) ── */
+.sa-load-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 28px;
+}
+
+.sa-load-more-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 /* ── Mobile (≤768px) ── */
 @media (max-width: 768px) {
   .sa-page {
